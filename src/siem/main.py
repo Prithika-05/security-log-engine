@@ -1,10 +1,16 @@
+from siem.exceptions import InvalidLogFormatException
 from siem.ingestion.file_reader import read_log_file
 from siem.parsing.log_parser import parse_log_line
 
 
 def main() -> None:
     for line in read_log_file("data/sample.log"):
-        entry = parse_log_line(line)
+        try:
+            entry = parse_log_line(line)
+        except InvalidLogFormatException as exc:
+            print(f"Invalid log: {exc}")
+            continue
+
         print(entry)
 
 
