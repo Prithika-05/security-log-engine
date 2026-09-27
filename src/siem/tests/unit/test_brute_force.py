@@ -35,7 +35,7 @@ def test_brute_force_alert_after_threshold():
         )
 
     assert alert is not None
-    assert alert.alert_type == "BRUTE_FORCE"
+    assert alert.alert_type == "Brute Force Detected"
     assert alert.source_ip == "10.0.0.5"
 
 def test_successful_login_does_not_trigger_alert():

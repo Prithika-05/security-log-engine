@@ -1,17 +1,22 @@
-from siem.exceptions import InvalidLogFormatException
-from siem.ingestion.file_reader import read_log_file
-from siem.parsing.log_parser import parse_log_line
+from siem.alerting.alert_manager import AlertManager
+from siem.core.engine import SecurityEngine
+from siem.detection.brute_force import BruteForceDetector
 
 
 def main() -> None:
-    for line in read_log_file("data/sample.log"):
-        try:
-            entry = parse_log_line(line)
-        except InvalidLogFormatException as exc:
-            print(f"Invalid log: {exc}")
-            continue
+    detector = BruteForceDetector(
+        threshold=5,
+        window_seconds=60,
+    )
 
-        print(entry)
+    alert_manager = AlertManager()
+
+    engine = SecurityEngine(
+        detector=detector,
+        alert_manager=alert_manager,
+    )
+
+    engine.process_file("src/data/sample.log")
 
 
 if __name__ == "__main__":
