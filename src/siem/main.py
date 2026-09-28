@@ -1,14 +1,15 @@
+import asyncio
+
 from siem.alerting.alert_manager import AlertManager
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
+from siem.detection.scanner import ScannerDetector
 
 
-def main() -> None:
+async def main() -> None:
     detectors = [
-        BruteForceDetector(
-            threshold=5,
-            window_seconds=60,
-        ),
+        BruteForceDetector(threshold=5, window_seconds=60),
+        ScannerDetector(threshold=3, window_seconds=60),
     ]
 
     alert_manager = AlertManager()
@@ -18,8 +19,8 @@ def main() -> None:
         alert_manager=alert_manager,
     )
 
-    engine.process_file("data/sample.log")
+    await engine.process_file("data/sample.log")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

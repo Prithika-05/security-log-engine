@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Callable, Any
+from typing import Any, Callable
 
 
 def rate_limit(cooldown_seconds: int):
@@ -9,7 +9,7 @@ def rate_limit(cooldown_seconds: int):
 
     def decorator(function: Callable[..., Any]):
         @wraps(function)
-        def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             nonlocal last_called
 
             now = datetime.now()
@@ -20,7 +20,7 @@ def rate_limit(cooldown_seconds: int):
 
             last_called = now
 
-            return function(*args, **kwargs)
+            return await function(*args, **kwargs)
 
         return wrapper
 

@@ -16,7 +16,7 @@ class SecurityEngine:
         self.detectors = detectors
         self.alert_manager = alert_manager
 
-    def process_file(self, path: str) -> None:
+    async def process_file(self, path: str) -> None:
         for line in read_log_file(path):
             try:
                 entry = parse_log_line(line)
@@ -28,4 +28,4 @@ class SecurityEngine:
                 alert = detector.process(entry)
 
                 if alert is not None:
-                    self.alert_manager.send(alert)
+                    await self.alert_manager.send(alert)
