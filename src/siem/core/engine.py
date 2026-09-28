@@ -1,5 +1,7 @@
+from collections.abc import Sequence
+
 from siem.alerting.alert_manager import AlertManager
-from siem.detection.brute_force import BruteForceDetector
+from siem.detection.protocols import Detector
 from siem.exceptions import InvalidLogFormatException
 from siem.ingestion.file_reader import read_log_file
 from siem.parsing.log_parser import parse_log_line
@@ -8,10 +10,10 @@ from siem.parsing.log_parser import parse_log_line
 class SecurityEngine:
     def __init__(
         self,
-        detector: BruteForceDetector,
+        detectors: Sequence[Detector],
         alert_manager: AlertManager,
     ) -> None:
-        self.detector = detector
+        self.detectors = detectors
         self.alert_manager = alert_manager
 
     def process_file(self, path: str) -> None:
@@ -22,7 +24,8 @@ class SecurityEngine:
                 print(f"Invalid log: {exc}")
                 continue
 
-            alert = self.detector.process(entry)
+            for detector in self.detectors:
+                alert = detector.process(entry)
 
-            if alert is not None:
-                self.alert_manager.trigger_alert(alert)
+                if alert is not None:
+                    self.alert_manager.send(alert)

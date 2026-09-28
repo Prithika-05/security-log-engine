@@ -4,19 +4,21 @@ from siem.detection.brute_force import BruteForceDetector
 
 
 def main() -> None:
-    detector = BruteForceDetector(
-        threshold=5,
-        window_seconds=60,
-    )
+    detectors = [
+        BruteForceDetector(
+            threshold=5,
+            window_seconds=60,
+        ),
+    ]
 
     alert_manager = AlertManager()
 
     engine = SecurityEngine(
-        detector=detector,
+        detectors=detectors,
         alert_manager=alert_manager,
     )
 
-    engine.process_file("src/data/sample.log")
+    engine.process_file("data/sample.log")
 
 
 if __name__ == "__main__":
