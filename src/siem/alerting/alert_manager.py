@@ -1,3 +1,5 @@
+import asyncio
+
 from siem.alerting.rate_limiter import RateLimiter
 from siem.models.alert import SecurityAlert
 
@@ -9,6 +11,8 @@ class AlertManager:
     async def send(self, alert: SecurityAlert) -> None:
         if not self.rate_limiter.allowed(alert.source_ip):
             return
+
+        await asyncio.sleep(0.1)
 
         print(
             f"[{alert.severity}] "
