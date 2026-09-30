@@ -10,17 +10,19 @@ class RateLimiter:
     ) -> None:
         self.cooldown = timedelta(seconds=cooldown_seconds)
         self.clock = clock
-        self.last_sent: datetime | None = None
+        self.last_sent: dict[str, datetime] = {}
 
-    def allowed(self) -> bool:
+    def allowed(self, key: str) -> bool:
         now = self.clock()
 
-        if self.last_sent is None:
-            self.last_sent = now
+        last_sent = self.last_sent.get(key)
+
+        if last_sent is None:
+            self.last_sent[key] = now
             return True
 
-        if now - self.last_sent >= self.cooldown:
-            self.last_sent = now
+        if now - last_sent >= self.cooldown:
+            self.last_sent[key] = now
             return True
 
         return False

@@ -1,8 +1,10 @@
 import pytest
-from unittest.mock import AsyncMock  # <-- Changed from Mock to AsyncMock
+from datetime import datetime                    # <-- Added missing import
+from unittest.mock import AsyncMock
 from siem.alerting.alert_manager import AlertManager
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
+from siem.alerting.rate_limiter import RateLimiter
 
 @pytest.mark.asyncio
 async def test_engine_detects_brute_force_with_mock(tmp_path):
@@ -19,15 +21,18 @@ async def test_engine_detects_brute_force_with_mock(tmp_path):
     )
 
     detector = BruteForceDetector(threshold=5, window_seconds=60)
-    alert_manager = AlertManager()
-
+    
+    # Correctly initialize the rate limiter with required positional arguments
+    rate_limiter = RateLimiter(cooldown_seconds=60, clock=datetime.now)
+    alert_manager = AlertManager(rate_limiter=rate_limiter) 
+    
     # Spy/Mock the 'send' method called by the engine
-    alert_manager.send = AsyncMock()  # <-- Updated to target 'send' as an AsyncMock
+    alert_manager.send = AsyncMock()
 
     engine = SecurityEngine(detectors=[detector], alert_manager=alert_manager)
     
     # Process the file asynchronously
-    await engine.process_file(str(log_file))  # <-- Added 'await' here
+    await engine.process_file(str(log_file))
 
     # Assert that the alert function was invoked exactly once
-    alert_manager.send.assert_called_once()  # <-- Updated assertion target
+    alert_manager.send.assert_called_once()
