@@ -1,16 +1,21 @@
-from siem.alerting.rate_limiter import rate_limit
+from datetime import datetime
+from siem.alerting.rate_limiter import RateLimiter  # <-- Update import
 from siem.models.alert import SecurityAlert
 
-class   AlertManager:
-    def trigger_alert(self, alert: SecurityAlert) -> None:
-        """Invoked by the engine to process alerts."""
-        self.send(alert)
+class AlertManager:
+    def __init__(self) -> None:
+        # Initialize the rate limiter with a 60-second cooldown and a clock function
+        self.limiter = RateLimiter(cooldown_seconds=60, clock=datetime.now)
 
-    @rate_limit(cooldown_seconds=60)
+    async def trigger_alert(self, alert: SecurityAlert) -> None:
+        """Invoked by the engine to process alerts."""
+        if self.limiter.allowed():
+            await self.send(alert)
+
     async def send(self, alert: SecurityAlert) -> None:
         print(
             f"[{alert.severity}] "
             f"{alert.alert_type} "
-            f"from {alert.source_ip}: "
+            f"({alert.source_ip}) "
             f"{alert.description}"
         )

@@ -1,27 +1,26 @@
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from functools import wraps
-from typing import Any, Callable
 
 
-def rate_limit(cooldown_seconds: int):
-    last_called: datetime | None = None
-    cooldown = timedelta(seconds=cooldown_seconds)
+class RateLimiter:
+    def __init__(
+        self,
+        cooldown_seconds: int,
+        clock: Callable[[], datetime],
+    ) -> None:
+        self.cooldown = timedelta(seconds=cooldown_seconds)
+        self.clock = clock
+        self.last_sent: datetime | None = None
 
-    def decorator(function: Callable[..., Any]):
-        @wraps(function)
-        async def wrapper(*args, **kwargs):
-            nonlocal last_called
+    def allowed(self) -> bool:
+        now = self.clock()
 
-            now = datetime.now()
+        if self.last_sent is None:
+            self.last_sent = now
+            return True
 
-            if last_called is not None:
-                if now - last_called < cooldown:
-                    return None
+        if now - self.last_sent >= self.cooldown:
+            self.last_sent = now
+            return True
 
-            last_called = now
-
-            return await function(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
+        return False
