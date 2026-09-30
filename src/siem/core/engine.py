@@ -15,10 +15,22 @@ class SecurityEngine:
         detectors: Sequence[Detector],
         alert_manager: AlertManager,
         worker_count: int = 3,
+        queue_size: int = 1000,
     ) -> None:
+        if worker_count < 1:
+            raise ValueError(
+                "worker_count must be at least 1"
+            )
+
+        if queue_size < 1:
+            raise ValueError(
+                "queue_size must be at least 1"
+            )
+
         self.detectors = detectors
         self.alert_manager = alert_manager
         self.worker_count = worker_count
+        self.queue_size = queue_size
 
     async def _alert_worker(
         self,

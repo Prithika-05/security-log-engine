@@ -36,3 +36,19 @@ async def test_engine_detects_brute_force_with_mock(tmp_path):
 
     # Assert that the alert function was invoked exactly once
     alert_manager.send.assert_called_once()
+
+def test_engine_rejects_zero_workers():
+    with pytest.raises(ValueError):
+        SecurityEngine(
+            detectors=[],
+            alert_manager=None,
+            worker_count=0,
+        )
+
+def test_engine_rejects_invalid_queue_size():
+    with pytest.raises(ValueError):
+        SecurityEngine(
+            detectors=[],
+            alert_manager=None,
+            queue_size=0,
+        )
