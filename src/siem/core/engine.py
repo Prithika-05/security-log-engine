@@ -41,6 +41,16 @@ class SecurityEngine:
 
             try:
                 await self.alert_manager.send(alert)
+
+            except asyncio.CancelledError:
+                raise
+
+            except Exception as exc:
+                print(
+                    f"Alert delivery failed for "
+                    f"{alert.source_ip}: {exc}"
+                )
+
             finally:
                 queue.task_done()
 
