@@ -5,7 +5,14 @@ from siem.alerting.alert_manager import AlertManager
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.detection.scanner import ScannerDetector
+from siem.alerting.console import ConsoleNotification
 
+notification = ConsoleNotification()
+
+alert_manager = AlertManager(
+    rate_limiter=rate_limiter,
+    notification=notification,
+)
 
 async def main() -> None:
     detectors = [
@@ -13,7 +20,16 @@ async def main() -> None:
         ScannerDetector(threshold=3, window_seconds=60),
     ]
 
-    alert_manager = AlertManager()
+    rate_limiter = RateLimiter(
+        cooldown_seconds=60,
+    )
+
+    notification = ConsoleNotification()
+
+    alert_manager = AlertManager(
+        rate_limiter=rate_limiter,
+        notification=notification,
+    )
 
     engine = SecurityEngine(
         detectors=detectors,
@@ -21,7 +37,6 @@ async def main() -> None:
     )
 
     await engine.process_file("data/sample.log")
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
