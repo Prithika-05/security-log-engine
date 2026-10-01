@@ -6,36 +6,47 @@ from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.alerting.rate_limiter import RateLimiter
 
+class FakeAlertManager(AlertManager):
+    def __init__(self):
+        self.alerts = []
+
+    async def send(self, alert):
+        self.alerts.append(alert)
+
 @pytest.mark.asyncio
-async def test_engine_detects_brute_force_with_mock(tmp_path):
-    log_file = tmp_path / "test.log"
+async def test_engine_processes_file(tmp_path):
+    log_file = tmp_path / "sample.log"
+
     log_file.write_text(
-        "\n".join([
-            "2026-09-25T10:00:01 10.0.0.5 POST /login 401",
-            "2026-09-25T10:00:02 10.0.0.5 POST /login 401",
-            "2026-09-25T10:00:03 10.0.0.5 POST /login 401",
-            "2026-09-25T10:00:04 10.0.0.5 POST /login 401",
-            "2026-09-25T10:00:05 10.0.0.5 POST /login 401",
-        ]),
+        "\n".join(
+            [
+                "2026-09-25T10:00:00 10.0.0.5 POST /login 401",
+                "2026-09-25T10:00:01 10.0.0.5 POST /login 401",
+                "2026-09-25T10:00:02 10.0.0.5 POST /login 401",
+                "2026-09-25T10:00:03 10.0.0.5 POST /login 401",
+                "2026-09-25T10:00:04 10.0.0.5 POST /login 401",
+            ]
+        ),
         encoding="utf-8",
     )
 
-    detector = BruteForceDetector(threshold=5, window_seconds=60)
-    
-    # Correctly initialize the rate limiter with required positional arguments
-    rate_limiter = RateLimiter(cooldown_seconds=60, clock=datetime.now)
-    alert_manager = AlertManager(rate_limiter=rate_limiter) 
-    
-    # Spy/Mock the 'send' method called by the engine
-    alert_manager.send = AsyncMock()
+    detector = BruteForceDetector(
+        threshold=5,
+        window_seconds=60,
+    )
 
-    engine = SecurityEngine(detectors=[detector], alert_manager=alert_manager)
-    
-    # Process the file asynchronously
+    alert_manager = FakeAlertManager()
+
+    engine = SecurityEngine(
+        detectors=[detector],
+        alert_manager=alert_manager,
+    )
+
     await engine.process_file(str(log_file))
 
-    # Assert that the alert function was invoked exactly once
-    alert_manager.send.assert_called_once()
+    assert len(alert_manager.alerts) == 1
+    # Update this line:
+    assert alert_manager.alerts[0].alert_type == "Brute Force Detected"
 
 def test_engine_rejects_zero_workers():
     with pytest.raises(ValueError):
