@@ -4,7 +4,7 @@ import pytest
 
 from siem.alerting.webhook import WebhookNotification
 from siem.models.alert import SecurityAlert
-
+from siem.exceptions import NotificationError
 
 class FakeHttpClient:
     def __init__(self) -> None:
@@ -17,6 +17,10 @@ class FakeHttpClient:
                 "json": json,
             }
         )
+
+class FailingHttpClient:
+    async def post(self, url: str, *, json: dict) -> None:
+        raise ConnectionError("Connection refused")
 
 @pytest.mark.asyncio
 async def test_webhook_sends_alert():
@@ -47,3 +51,25 @@ async def test_webhook_sends_alert():
     assert request["json"]["alert_type"] == "BRUTE_FORCE"
     assert request["json"]["severity"] == "HIGH"
     assert request["json"]["source_ip"] == "10.0.0.5"
+
+@pytest.mark.asyncio
+async def test_webhook_converts_connection_error():
+    client = FailingHttpClient()
+
+    notification = WebhookNotification(
+        client=client,
+        url="https://example.test/webhook",
+    )
+
+    alert = SecurityAlert(
+        timestamp=datetime.fromisoformat(
+            "2026-10-01T10:00:00"
+        ),
+        alert_type="BRUTE_FORCE",
+        severity="HIGH",
+        source_ip="10.0.0.5",
+        description="5 failed login attempts",
+    )
+
+    with pytest.raises(NotificationError):
+        await notification.send(alert)

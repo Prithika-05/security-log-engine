@@ -1,5 +1,6 @@
 from siem.alerting.notifications import NotificationChannel
 from siem.alerting.rate_limiter import RateLimiter
+from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
 
 
@@ -16,4 +17,7 @@ class AlertManager:
         if not self.rate_limiter.allowed(alert.source_ip):
             return
 
-        await self.notification.send(alert)
+        try:
+            await self.notification.send(alert)
+        except NotificationError as exc:
+            print(f"Notification failed: {exc}")

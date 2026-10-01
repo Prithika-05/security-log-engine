@@ -1,3 +1,4 @@
+from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
 
 
@@ -15,7 +16,12 @@ class WebhookNotification:
             "description": alert.description,
         }
 
-        await self.client.post(
-            self.url,
-            json=payload,
-        )
+        try:
+            await self.client.post(
+                self.url,
+                json=payload,
+            )
+        except (ConnectionError, TimeoutError) as exc:
+            raise NotificationError(
+                f"Failed to send alert to {self.url}"
+            ) from exc
