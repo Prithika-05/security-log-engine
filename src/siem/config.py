@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 
@@ -36,3 +37,23 @@ class Settings:
             raise ValueError(
                 "alert_cooldown_seconds must be greater than zero"
             )
+
+
+def load_settings() -> Settings:
+    return Settings(
+        brute_force_threshold=int(
+            os.environ.get("BRUTE_FORCE_THRESHOLD", "5")
+        ),
+        brute_force_window_seconds=int(
+            os.environ.get("BRUTE_FORCE_WINDOW_SECONDS", "60")
+        ),
+        scanner_threshold=int(
+            os.environ.get("SCANNER_THRESHOLD", "3")
+        ),
+        scanner_window_seconds=int(
+            os.environ.get("SCANNER_WINDOW_SECONDS", "60")
+        ),
+        alert_cooldown_seconds=int(
+            os.environ.get("ALERT_COOLDOWN_SECONDS", "60")
+        ),
+    )
