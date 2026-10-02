@@ -7,11 +7,14 @@ from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.detection.scanner import ScannerDetector
 from siem.alerting.console import ConsoleNotification
+from siem.logging_config import configure_logging
 
 from siem.config import load_settings 
 from siem.alerting.rate_limiter import RateLimiter  
 
 async def main() -> None:
+    configure_logging()
+    
     settings = load_settings()
 
     detectors = [

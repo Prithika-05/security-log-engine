@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import Sequence
 
 from siem.alerting.alert_manager import AlertManager
@@ -8,8 +9,11 @@ from siem.ingestion.file_reader import read_log_file
 from siem.models.alert import SecurityAlert
 from siem.parsing.log_parser import parse_log_line
 
+logger = logging.getLogger(__name__)
+
 
 class SecurityEngine:
+
     def __init__(
         self,
         detectors: Sequence[Detector],
@@ -18,14 +22,10 @@ class SecurityEngine:
         queue_size: int = 1000,
     ) -> None:
         if worker_count < 1:
-            raise ValueError(
-                "worker_count must be at least 1"
-            )
+            raise ValueError("worker_count must be at least 1")
 
         if queue_size < 1:
-            raise ValueError(
-                "queue_size must be at least 1"
-            )
+            raise ValueError("queue_size must be at least 1")
 
         self.detectors = detectors
         self.alert_manager = alert_manager
@@ -46,10 +46,7 @@ class SecurityEngine:
                 raise
 
             except Exception as exc:
-                print(
-                    f"Alert delivery failed for "
-                    f"{alert.source_ip}: {exc}"
-                )
+                print(f"Alert delivery failed for {alert.source_ip}: {exc}")
 
             finally:
                 queue.task_done()
@@ -64,6 +61,9 @@ class SecurityEngine:
         ]
 
     async def process_file(self, path: str) -> None:
+        # 6. Log engine activity
+        logger.info("Processing log file: %s", path)
+
         queue: asyncio.Queue[SecurityAlert] = asyncio.Queue()
 
         workers = self._start_workers(queue)
@@ -73,7 +73,8 @@ class SecurityEngine:
                 try:
                     entry = parse_log_line(line)
                 except InvalidLogFormatException as exc:
-                    print(f"Invalid log: {exc}")
+                    # 7. Replace invalid-log print()
+                    logger.warning("Invalid log: %s", exc)
                     continue
 
                 for detector in self.detectors:
