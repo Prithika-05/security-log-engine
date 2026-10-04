@@ -29,7 +29,7 @@ async def test_workers_process_all_alerts():
 
     queue: asyncio.Queue[SecurityAlert] = asyncio.Queue()
 
-    workers = engine._start_workers(queue)
+    workers = [asyncio.create_task(engine._alert_worker(queue)) for _ in range(3)]
 
     alerts = [
         SecurityAlert(

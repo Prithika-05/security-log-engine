@@ -65,7 +65,7 @@ async def test_alert_manager_sends_alert(capsys):
     limiter = RateLimiter(cooldown_seconds=60, clock=lambda: clock_time)
     notification = FakeNotification()
 
-    manager = AlertManager(rate_limiter=limiter, notification=notification)
+    manager = AlertManager(rate_limiter=limiter, notifications=[notification])
 
     alert = SecurityAlert(
         timestamp=clock_time,
@@ -83,7 +83,7 @@ async def test_alert_manager_rate_limits_same_ip(capsys):
     limiter = RateLimiter(cooldown_seconds=60, clock=clock.now)
     notification = FakeNotification()
 
-    manager = AlertManager(rate_limiter=limiter, notification=notification)
+    manager = AlertManager(rate_limiter=limiter, notifications=[notification])
 
     alert = SecurityAlert(
         timestamp=clock.current,
@@ -101,7 +101,7 @@ async def test_alert_manager_sends_to_notification():
     limiter = RateLimiter(cooldown_seconds=60, clock=clock.now)
     notification = FakeNotification()
 
-    manager = AlertManager(rate_limiter=limiter, notification=notification)
+    manager = AlertManager(rate_limiter=limiter, notifications=[notification])
 
     alert = SecurityAlert(
         timestamp=clock.now(),
@@ -125,7 +125,7 @@ async def test_alert_manager_handles_notification_failure(capsys):
 
     manager = AlertManager(
         rate_limiter=limiter,
-        notification=FailingNotification(),
+        notifications=[FailingNotification()],
     )
 
     alert = SecurityAlert(
@@ -140,38 +140,39 @@ async def test_alert_manager_handles_notification_failure(capsys):
     with pytest.raises(NotificationError, match="Webhook unavailable"):
         await manager.send(alert)
 
-    @pytest.mark.asyncio
-    async def test_notification_concurrency_is_bounded():
-        clock = FakeClock(
-            datetime.fromisoformat("2026-10-02T10:00:00")
+
+@pytest.mark.asyncio
+async def test_notification_concurrency_is_bounded():
+    clock = FakeClock(
+        datetime.fromisoformat("2026-10-02T10:00:00")
+    )
+
+    limiter = RateLimiter(
+        cooldown_seconds=1,
+        clock=clock.now,
+    )
+
+    notification = TrackingNotification()
+
+    manager = AlertManager(
+        rate_limiter=limiter,
+        notifications=[notification],
+        max_concurrent_notifications=2,
+    )
+
+    alerts = [
+        SecurityAlert(
+            timestamp=clock.now(),
+            alert_type="TEST",
+            severity="LOW",
+            source_ip=f"10.0.0.{i}",
+            description="test",
         )
+        for i in range(5)
+    ]
 
-        limiter = RateLimiter(
-            cooldown_seconds=1,
-            clock=clock,
-        )
+    await asyncio.gather(
+        *(manager.send(alert) for alert in alerts)
+    )
 
-        notification = TrackingNotification()
-
-        manager = AlertManager(
-            rate_limiter=limiter,
-            notifications=[notification],
-            max_concurrent_notifications=2,
-        )
-
-        alerts = [
-            SecurityAlert(
-                timestamp=clock(),
-                alert_type="TEST",
-                severity="LOW",
-                source_ip=f"10.0.0.{i}",
-                description="test",
-            )
-            for i in range(5)
-        ]
-
-        await asyncio.gather(
-            *(manager.send(alert) for alert in alerts)
-        )
-
-        assert notification.maximum_active <= 2
+    assert notification.maximum_active <= 2

@@ -37,10 +37,10 @@ async def main() -> None:
 
     # 2. Pass it as 'notification' instead of 'notifications'
     alert_manager = AlertManager(
-        rate_limiter=rate_limiter,
-        notification=notification,
+    rate_limiter=rate_limiter,
+    notifications=[notification],  # Wrapped in a list
     )
-
+    
     engine = SecurityEngine(
         detectors=detectors,
         alert_manager=alert_manager,
