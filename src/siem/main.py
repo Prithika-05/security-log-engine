@@ -14,7 +14,6 @@ from siem.alerting.rate_limiter import RateLimiter
 
 async def main() -> None:
     configure_logging()
-    
     settings = load_settings()
 
     detectors = [
