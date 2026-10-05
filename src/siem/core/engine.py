@@ -170,3 +170,50 @@ class SecurityEngine:
                 *alert_workers,
                 return_exceptions=True,
             )
+
+    async def process_file(self, path: str) -> None:
+        logger.info(
+            "Processing log file: %s",
+            path,
+        )
+
+        queue: asyncio.Queue[str] = asyncio.Queue(
+            maxsize=self.queue_size
+        )
+
+        alert_queue: asyncio.Queue[SecurityAlert] = (
+            asyncio.Queue(
+                maxsize=self.queue_size
+            )
+        )
+
+        detection_worker = asyncio.create_task(
+            self._worker(
+                queue,
+                alert_queue,
+            )
+        )
+
+        alert_workers = self._start_alert_workers(
+            alert_queue
+        )
+
+        try:
+            for line in read_log_file(path):
+                await queue.put(line)
+
+            await queue.join()
+
+            await alert_queue.join()
+
+        finally:
+            detection_worker.cancel()
+
+            for worker in alert_workers:
+                worker.cancel()
+
+            await asyncio.gather(
+                detection_worker,
+                *alert_workers,
+                return_exceptions=True,
+            )
