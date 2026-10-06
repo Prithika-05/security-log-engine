@@ -4,7 +4,10 @@ from collections.abc import Sequence
 
 from siem.alerting.alert_manager import AlertManager
 from siem.detection.protocols import Detector
-from siem.exceptions import InvalidLogFormatException
+from siem.exceptions import (
+    InvalidLogFormatException,
+    NotificationError,
+)
 from siem.ingestion.file_reader import read_log_file
 from siem.models.alert import SecurityAlert
 from siem.parsing.log_parser import parse_log_line
@@ -97,7 +100,7 @@ class SecurityEngine:
                 except asyncio.CancelledError:
                     raise
 
-                except Exception as exc:
+                except NotificationError as exc:
                     logger.error(
                         "Alert delivery failed for %s: %s",
                         alert.source_ip,

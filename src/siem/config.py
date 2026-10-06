@@ -12,6 +12,9 @@ class Settings:
 
     alert_cooldown_seconds: int = 60
 
+    alert_worker_count: int = 3
+    queue_size: int = 1000
+
     def __post_init__(self) -> None:
         if self.brute_force_threshold <= 0:
             raise ValueError(
@@ -38,6 +41,16 @@ class Settings:
                 "alert_cooldown_seconds must be greater than zero"
             )
 
+        if self.alert_worker_count <= 0:
+            raise ValueError(
+                "alert_worker_count must be greater than zero"
+            )
+
+        if self.queue_size <= 0:
+            raise ValueError(
+                "queue_size must be greater than zero"
+            )
+
 
 def load_settings() -> Settings:
     return Settings(
@@ -55,5 +68,11 @@ def load_settings() -> Settings:
         ),
         alert_cooldown_seconds=int(
             os.environ.get("ALERT_COOLDOWN_SECONDS", "60")
+        ),
+        alert_worker_count=int(
+            os.environ.get("ALERT_WORKER_COUNT", "3")
+        ),
+        queue_size=int(
+            os.environ.get("QUEUE_SIZE", "1000")
         ),
     )

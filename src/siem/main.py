@@ -44,6 +44,8 @@ async def main() -> None:
     engine = SecurityEngine(
         detectors=detectors,
         alert_manager=alert_manager,
+        worker_count=settings.alert_worker_count,
+        queue_size=settings.queue_size,
     )
 
     await engine.process_file("src/siem/data/sample.log")

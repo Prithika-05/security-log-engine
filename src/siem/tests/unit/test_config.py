@@ -21,12 +21,16 @@ def test_invalid_scanner_window():
         Settings(scanner_window_seconds=0)
 
 def test_load_settings_from_environment(monkeypatch):
-    monkeypatch.setenv("BRUTE_FORCE_THRESHOLD", "10")
-    monkeypatch.setenv("SCANNER_THRESHOLD", "7")
-    monkeypatch.setenv("ALERT_COOLDOWN_SECONDS", "120")
+    monkeypatch.setenv(
+        "ALERT_WORKER_COUNT",
+        "5",
+    )
+    monkeypatch.setenv(
+        "QUEUE_SIZE",
+        "5000",
+    )
 
     settings = load_settings()
 
-    assert settings.brute_force_threshold == 10
-    assert settings.scanner_threshold == 7
-    assert settings.alert_cooldown_seconds == 120
+    assert settings.alert_worker_count == 5
+    assert settings.queue_size == 5000
