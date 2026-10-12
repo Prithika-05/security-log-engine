@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime                    
 from unittest.mock import AsyncMock
+from unittest.mock import Mock
 from siem.alerting.alert_manager import AlertManager
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
@@ -60,7 +61,7 @@ class FakeNotification:
 @pytest.mark.asyncio
 async def test_full_brute_force_pipeline(tmp_path):
     log_file = tmp_path / "security.log"
-
+ 
     log_file.write_text(
         "\n".join(
             [
@@ -81,8 +82,13 @@ async def test_full_brute_force_pipeline(tmp_path):
 
     notification = FakeNotification()
 
+    clock = Mock()
+    # Mock the time/now method if RateLimiter references it, e.g., clock.now.return_value = datetime.now()
+    
+    # FIX: Pass clock as a keyword argument to avoid the TypeError
     rate_limiter = RateLimiter(
         cooldown_seconds=60,
+        clock=clock, 
     )
 
     alert_manager = AlertManager(
@@ -148,8 +154,10 @@ async def test_full_scanner_pipeline(tmp_path):
 
     notification = FakeNotification()
 
+    clock = Mock()
     rate_limiter = RateLimiter(
         cooldown_seconds=60,
+        clock=clock, 
     )
 
     alert_manager = AlertManager(

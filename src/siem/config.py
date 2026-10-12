@@ -15,6 +15,9 @@ class Settings:
     alert_worker_count: int = 3
     queue_size: int = 1000
 
+    webhook_timeout_seconds: float = 5.0
+    webhook_max_retries: int = 3
+
     def __post_init__(self) -> None:
         if self.brute_force_threshold <= 0:
             raise ValueError(
@@ -50,6 +53,16 @@ class Settings:
             raise ValueError(
                 "queue_size must be greater than zero"
             )
+        
+        if self.webhook_timeout_seconds <= 0:
+            raise ValueError(
+                "webhook_timeout_seconds must be greater than zero"
+            )
+
+        if self.webhook_max_retries < 0:
+            raise ValueError(
+                "webhook_max_retries must not be negative"
+            )
 
 
 def load_settings() -> Settings:
@@ -74,5 +87,17 @@ def load_settings() -> Settings:
         ),
         queue_size=int(
             os.environ.get("QUEUE_SIZE", "1000")
+        ),
+        webhook_timeout_seconds=float(
+            os.environ.get(
+                "WEBHOOK_TIMEOUT_SECONDS",
+                "5.0",
+            )
+        ),
+        webhook_max_retries=int(
+            os.environ.get(
+                "WEBHOOK_MAX_RETRIES",
+                "3",
+            )
         ),
     )

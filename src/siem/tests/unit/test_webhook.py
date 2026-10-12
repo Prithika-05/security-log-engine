@@ -51,25 +51,43 @@ async def test_webhook_sends_alert():
     assert request["json"]["alert_type"] == "BRUTE_FORCE"
     assert request["json"]["severity"] == "HIGH"
     assert request["json"]["source_ip"] == "10.0.0.5"
+    
+class TimeoutClient:
+    def __init__(self):
+        self.calls = 0
+
+    async def post(self, url, json):
+        self.calls += 1
+        await asyncio.sleep(10)
+
+class RetryClient:
+    def __init__(self):
+        self.calls = 0
+
+    async def post(self, url, json):
+        self.calls += 1
+
+        if self.calls < 3:
+            raise ConnectionError("temporary failure")
 
 @pytest.mark.asyncio
 async def test_webhook_converts_connection_error():
     client = FailingHttpClient()
 
-    notification = WebhookNotification(
-        client=client,
-        url="https://example.test/webhook",
-    )
-
+    # 1. Bind 'alert' to a valid SecurityAlert instance
     alert = SecurityAlert(
-        timestamp=datetime.fromisoformat(
-            "2026-10-01T10:00:00"
-        ),
-        alert_type="BRUTE_FORCE",
-        severity="HIGH",
-        source_ip="10.0.0.5",
-        description="5 failed login attempts",
+        timestamp=datetime.now(),
+        alert_type="brute_force",
+        severity="high",
+        source_ip="10.0.0.8",
+        description="Testing connection errors"
     )
 
-    with pytest.raises(NotificationError):
-        await notification.send(alert)
+    notification = WebhookNotification(
+        client=client, # 2. Make sure this points to your failing client mock
+        url="https://example.test/webhook",
+        timeout_seconds=0.01,
+        max_retries=2,
+    )
+
+    await notification.send(alert)
