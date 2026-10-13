@@ -1,3 +1,4 @@
+import asyncio  # Added to prevent NameError inside TimeoutClient
 from datetime import datetime
 
 import pytest
@@ -10,7 +11,7 @@ class FakeHttpClient:
     def __init__(self) -> None:
         self.requests = []
 
-    async def post(self, url: str, *, json: dict) -> None:
+    async def post(self, url, json=None, *args, **kwargs):
         self.requests.append(
             {
                 "url": url,
@@ -19,7 +20,7 @@ class FakeHttpClient:
         )
 
 class FailingHttpClient:
-    async def post(self, url: str, *, json: dict) -> None:
+    async def post(self, url, json=None, *args, **kwargs):
         raise ConnectionError("Connection refused")
 
 class FakeResponse:
@@ -30,7 +31,7 @@ class StatusCodeClient:
     def __init__(self) -> None:
         self.calls = 0
 
-    async def post(self, url, json):
+    async def post(self, url, json=None, *args, **kwargs):  # Fixed indentation here
         self.calls += 1
 
         if self.calls < 3:
@@ -42,7 +43,7 @@ class TimeoutClient:
     def __init__(self):
         self.calls = 0
 
-    async def post(self, url, json):
+    async def post(self, url, json=None, *args, **kwargs):  # Standardised parameters
         self.calls += 1
         await asyncio.sleep(10)
 
@@ -50,7 +51,7 @@ class RetryClient:
     def __init__(self):
         self.calls = 0
 
-    async def post(self, url, json):
+    async def post(self, url, json=None, *args, **kwargs):
         self.calls += 1
 
         if self.calls < 3:
@@ -62,6 +63,21 @@ class FakeSleep:
 
     async def __call__(self, delay: float) -> None:
         self.delays.append(delay)
+
+class RecordingClient:
+    def __init__(self) -> None:
+        self.calls = []
+
+    async def post(self, url, json=None, headers=None, *args, **kwargs):  # Standardised parameters
+        self.calls.append({
+            "payload": json,
+            "headers": headers,
+        })
+
+        if len(self.calls) == 1:
+            return FakeResponse(503)
+
+        return FakeResponse(200)
 
 @pytest.mark.asyncio
 async def test_webhook_converts_connection_error():
@@ -189,4 +205,32 @@ def make_test_alert() -> SecurityAlert:
         severity="high",
         source_ip="10.0.0.8",
         description="Testing retry logic"
+    )
+
+@pytest.mark.asyncio
+async def test_webhook_reuses_idempotency_key_on_retry():
+    client = RecordingClient()
+    fake_sleep = FakeSleep()
+    alert = make_test_alert()
+
+    notification = WebhookNotification(
+        client=client,
+        url="https://example.test/webhook",
+        max_retries=2,
+        sleep=fake_sleep,
+    )
+
+    await notification.send(alert)
+
+    assert len(client.calls) == 2
+
+    first = client.calls[0]
+    second = client.calls[1]
+
+    assert first["payload"]["alert_id"] == alert.alert_id
+    assert second["payload"]["alert_id"] == alert.alert_id
+
+    assert (
+        first["headers"]["Idempotency-Key"]
+        == second["headers"]["Idempotency-Key"]
     )

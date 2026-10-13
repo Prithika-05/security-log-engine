@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Awaitable, Callable
+import uuid
 
 from siem.exceptions import (
     NotificationError,
@@ -36,6 +37,7 @@ class WebhookNotification:
 
     async def send(self, alert: SecurityAlert) -> None:
         payload = {
+            "alert_id": alert.alert_id,
             "timestamp": alert.timestamp.isoformat(),
             "alert_type": alert.alert_type,
             "severity": alert.severity,
@@ -43,12 +45,16 @@ class WebhookNotification:
             "description": alert.description,
         }
 
+        headers = {
+        "Idempotency-Key":  alert.alert_id  # or use alert.alert_id if preferred
+        }
+        
         sleep_func = getattr(self, "sleep", None) or asyncio.sleep
 
         for attempt in range(self.max_retries + 1):
             try:
                 response = await asyncio.wait_for(
-                    self.client.post(self.url, json=payload),
+                    self.client.post(self.url, json=payload, headers=headers),
                     timeout=self.timeout_seconds,
                 )
 
