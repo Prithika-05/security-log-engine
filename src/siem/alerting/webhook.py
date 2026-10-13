@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import Awaitable, Callable
+
 from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
 
@@ -10,17 +12,24 @@ class WebhookNotification:
         url: str,
         timeout_seconds: float = 5.0,
         max_retries: int = 3,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
         if timeout_seconds <= 0:
-            raise ValueError("timeout_seconds must be greater than zero")
+            raise ValueError(
+                "timeout_seconds must be greater than zero"
+            )
+
         if max_retries < 0:
-            raise ValueError("max_retries must not be negative")
+            raise ValueError(
+                "max_retries must not be negative"
+            )
 
         self.client = client
         self.url = url
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
-
+        self.sleep = sleep
+        
     async def send(self, alert: SecurityAlert) -> None:
         payload = {
             "timestamp": alert.timestamp.isoformat(),

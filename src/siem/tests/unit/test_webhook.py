@@ -71,6 +71,13 @@ class RetryClient:
         if self.calls < 3:
             raise ConnectionError("temporary failure")
 
+class FakeSleep:
+    def __init__(self) -> None:
+        self.delays: list[float] = []
+
+    async def __call__(self, delay: float) -> None:
+        self.delays.append(delay)
+
 @pytest.mark.asyncio
 async def test_webhook_converts_connection_error():
     client = FailingHttpClient()
@@ -93,3 +100,20 @@ async def test_webhook_converts_connection_error():
 
     with pytest.raises(NotificationError):
         await notification.send(alert)
+
+@pytest.mark.asyncio
+async def test_webhook_retries_without_real_sleep():
+    client = RetryClient()  # Your existing fake client
+    fake_sleep = FakeSleep()
+
+    notification = WebhookNotification(
+        client=client,
+        url="https://example.test/webhook",
+        max_retries=3,
+        sleep=fake_sleep,
+    )
+
+    await notification.send(make_test_alert())
+
+    assert client.calls == 3
+    assert fake_sleep.delays == [1, 2]
