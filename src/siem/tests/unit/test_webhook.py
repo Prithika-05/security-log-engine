@@ -41,6 +41,7 @@ async def test_webhook_sends_alert():
         description="5 failed login attempts",
     )
 
+    
     await notification.send(alert)
 
     assert len(client.requests) == 1
@@ -90,4 +91,5 @@ async def test_webhook_converts_connection_error():
         max_retries=2,
     )
 
-    await notification.send(alert)
+    with pytest.raises(NotificationError):
+        await notification.send(alert)

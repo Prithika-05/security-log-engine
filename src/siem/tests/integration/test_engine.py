@@ -111,10 +111,10 @@ async def test_full_brute_force_pipeline(tmp_path):
 
     alert = notification.alerts[0]
 
-    assert alert.alert_type == "BRUTE_FORCE"
+    assert alert.alert_type == "Brute Force Detected"
     assert alert.severity == "HIGH"
     assert alert.source_ip == "10.0.0.5"
-    assert "5 failed login attempts" in alert.description
+    assert "Multiple failed login attempts (5)" in alert.description
 
 def test_engine_rejects_zero_workers():
     with pytest.raises(ValueError):
