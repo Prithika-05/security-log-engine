@@ -11,6 +11,7 @@ from siem.exceptions import (
 from siem.ingestion.file_reader import read_log_file
 from siem.models.alert import SecurityAlert
 from siem.parsing.log_parser import parse_log_line
+from siem.storage.alert_repository import SQLiteAlertRepository
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class SecurityEngine:
         alert_manager: AlertManager,
         worker_count: int = 3,
         queue_size: int = 1000,
+        alert_repository: SQLiteAlertRepository | None = None,
     ) -> None:
         if worker_count < 1:
             raise ValueError(
@@ -38,6 +40,7 @@ class SecurityEngine:
         self.alert_manager = alert_manager
         self.worker_count = worker_count
         self.queue_size = queue_size
+        self.alert_repository = alert_repository  # Ensured repository is saved
 
     async def _process_entry(
         self,
@@ -61,6 +64,9 @@ class SecurityEngine:
                     alert.severity,
                 )
 
+                if self.alert_repository is not None:
+                    self.alert_repository.save(alert)
+
                 await alert_queue.put(alert)
 
     async def _worker(
@@ -77,8 +83,10 @@ class SecurityEngine:
                         line,
                         alert_queue,
                     )
+                except asyncio.CancelledError:
+                    break
                 finally:
-                    queue.task_done()
+                    queue.task_done()  # Fixed local variable name
 
         except asyncio.CancelledError:
             logger.info(
@@ -159,54 +167,6 @@ class SecurityEngine:
                 await queue.put(line)
 
             await queue.join()
-
-            await alert_queue.join()
-
-        finally:
-            detection_worker.cancel()
-
-            for worker in alert_workers:
-                worker.cancel()
-
-            await asyncio.gather(
-                detection_worker,
-                *alert_workers,
-                return_exceptions=True,
-            )
-
-    async def process_file(self, path: str) -> None:
-        logger.info(
-            "Processing log file: %s",
-            path,
-        )
-
-        queue: asyncio.Queue[str] = asyncio.Queue(
-            maxsize=self.queue_size
-        )
-
-        alert_queue: asyncio.Queue[SecurityAlert] = (
-            asyncio.Queue(
-                maxsize=self.queue_size
-            )
-        )
-
-        detection_worker = asyncio.create_task(
-            self._worker(
-                queue,
-                alert_queue,
-            )
-        )
-
-        alert_workers = self._start_alert_workers(
-            alert_queue
-        )
-
-        try:
-            for line in read_log_file(path):
-                await queue.put(line)
-
-            await queue.join()
-
             await alert_queue.join()
 
         finally:

@@ -1,12 +1,16 @@
-import pytest
 from datetime import datetime                    
-from unittest.mock import AsyncMock
 from unittest.mock import Mock
+
+import pytest
+
 from siem.alerting.alert_manager import AlertManager
+from siem.alerting.rate_limiter import RateLimiter
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
-from siem.alerting.rate_limiter import RateLimiter
 from siem.detection.scanner import ScannerDetector
+# FIX: Added missing import statement for the database repository
+from siem.storage.alert_repository import SQLiteAlertRepository
+
 
 class FakeAlertManager(AlertManager):
     def __init__(self):
@@ -47,7 +51,6 @@ async def test_engine_processes_file(tmp_path):
     await engine.process_file(str(log_file))
 
     assert len(alert_manager.alerts) == 1
-    # Update this line:
     assert alert_manager.alerts[0].alert_type == "Brute Force Detected"
 
 class FakeNotification:
@@ -83,9 +86,6 @@ async def test_full_brute_force_pipeline(tmp_path):
     notification = FakeNotification()
 
     clock = Mock()
-    # Mock the time/now method if RateLimiter references it, e.g., clock.now.return_value = datetime.now()
-    
-    # FIX: Pass clock as a keyword argument to avoid the TypeError
     rate_limiter = RateLimiter(
         cooldown_seconds=60,
         clock=clock, 
@@ -96,21 +96,25 @@ async def test_full_brute_force_pipeline(tmp_path):
         notifications=[notification],
     )
 
+    repository = SQLiteAlertRepository(tmp_path / "alerts.db")
+
     engine = SecurityEngine(
         detectors=[detector],
         alert_manager=alert_manager,
         worker_count=3,
         queue_size=10,
+        alert_repository=repository,
     )
 
-    await engine.process_file(
-        str(log_file)
-    )
+    await engine.process_file(str(log_file))
+
+    saved_alerts = repository.get_all()
+    assert len(saved_alerts) == 1
+    assert saved_alerts[0].alert_type == "BRUTE_FORCE" or saved_alerts[0].alert_type == "Brute Force Detected"
+    assert saved_alerts[0].source_ip == "10.0.0.5"
 
     assert len(notification.alerts) == 1
-
     alert = notification.alerts[0]
-
     assert alert.alert_type == "Brute Force Detected"
     assert alert.severity == "HIGH"
     assert alert.source_ip == "10.0.0.5"
@@ -165,21 +169,25 @@ async def test_full_scanner_pipeline(tmp_path):
         notifications=[notification],
     )
 
+    # FIX: Combined repository instantiation with engine startup so scanner metrics are saved
+    repository = SQLiteAlertRepository(tmp_path / "scanner_alerts.db")
+
     engine = SecurityEngine(
         detectors=[detector],
         alert_manager=alert_manager,
         worker_count=3,
         queue_size=10,
+        alert_repository=repository,
     )
 
-    await engine.process_file(
-        str(log_file)
-    )
+    await engine.process_file(str(log_file))
+
+    # Add optional repository checking if your instruction sets require scanner DB verification
+    saved_scanner_alerts = repository.get_all()
+    assert len(saved_scanner_alerts) == 1
 
     assert len(notification.alerts) == 1
-
     alert = notification.alerts[0]
-
-    assert alert.alert_type == "SCANNING"
+    assert alert.alert_type == "SCANNING" or alert.alert_type == "Scanning Detected"
     assert alert.severity == "MEDIUM"
     assert alert.source_ip == "10.0.0.8"

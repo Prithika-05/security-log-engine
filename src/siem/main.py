@@ -1,19 +1,38 @@
+import argparse
 import asyncio
 import logging
 import time
 
 from siem.alerting.alert_manager import AlertManager
+from siem.alerting.console import ConsoleNotification
+from siem.alerting.rate_limiter import RateLimiter
+from siem.config import load_settings
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.detection.scanner import ScannerDetector
 from siem.alerting.console import ConsoleNotification
 from siem.logging_config import configure_logging
-
 from siem.config import load_settings 
 from siem.alerting.rate_limiter import RateLimiter  
+from pathlib import Path
+from siem.storage.alert_repository import SQLiteAlertRepository
 
-async def main() -> None:
-    configure_logging()
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Security Log Analytics Engine"
+    )
+
+    parser.add_argument(
+        "--log-file",
+        required=True,
+        help="Path to the log file to process",
+    )
+
+    return parser.parse_args()
+
+
+async def run_engine(log_file: Path) -> None:
     settings = load_settings()
 
     detectors = [
@@ -29,18 +48,18 @@ async def main() -> None:
 
     rate_limiter = RateLimiter(
         cooldown_seconds=settings.alert_cooldown_seconds,
-        clock=time, 
+        clock=time.time,
     )
 
-    # 1. Change this to a single instance instead of a list
-    notification = ConsoleNotification()
+    notifications = [
+        ConsoleNotification(),
+    ]
 
-    # 2. Pass it as 'notification' instead of 'notifications'
     alert_manager = AlertManager(
-    rate_limiter=rate_limiter,
-    notifications=[notification],  # Wrapped in a list
+        rate_limiter=rate_limiter,
+        notifications=notifications,
     )
-    
+
     engine = SecurityEngine(
         detectors=detectors,
         alert_manager=alert_manager,
@@ -48,8 +67,27 @@ async def main() -> None:
         queue_size=settings.queue_size,
     )
 
-    await engine.process_file("src/siem/data/sample.log")
-    
+    alert_repository = SQLiteAlertRepository(
+        "data/alerts.db"
+    )
+
+    await engine.process_file(str(log_file))
+
+
+async def main() -> None:
+    configure_logging()
+    args = parse_args()
+
+    log_file = Path(args.log_file)
+
+    if not log_file.is_file():
+        raise SystemExit(
+            f"Error: log file does not exist or is not a file: {log_file}"
+        )
+
+    await run_engine(log_file)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
