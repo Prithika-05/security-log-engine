@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 
+from siem.exceptions import StorageError
 from siem.models.alert import SecurityAlert
 from datetime import datetime
 
@@ -31,51 +32,68 @@ class SQLiteAlertRepository:
             )
 
     def save(self, alert: SecurityAlert) -> None:
-        with sqlite3.connect(self.database_path) as connection:
-            connection.execute(
-                """
-                INSERT OR IGNORE INTO alerts (
-                    alert_id,
-                    timestamp,
-                    alert_type,
-                    severity,
-                    source_ip,
-                    description
+        try:
+            with sqlite3.connect(self.database_path) as connection:
+                connection.execute(
+                    """
+                    INSERT INTO alerts (
+                        alert_id,
+                        timestamp,
+                        alert_type,
+                        severity,
+                        source_ip,
+                        description
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(alert_id) DO NOTHING
+                    """,
+                    (
+                        alert.alert_id,
+                        alert.timestamp.isoformat(),
+                        alert.alert_type,
+                        alert.severity,
+                        alert.source_ip,
+                        alert.description,
+                    ),
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    alert.alert_id,
-                    alert.timestamp.isoformat(),
-                    alert.alert_type,
-                    alert.severity,
-                    alert.source_ip,
-                    alert.description,
-                ),
-            )
+        except sqlite3.Error as exc:
+            raise StorageError(
+                f"Failed to save alert {alert.alert_id}"
+            ) from exc
 
-    def get_all(self) -> list[SecurityAlert]:
+    def get_all(
+        self,
+        severity: str | None = None,
+    ) -> list[SecurityAlert]:
+        query = """
+            SELECT
+                alert_id,
+                timestamp,
+                alert_type,
+                severity,
+                source_ip,
+                description
+            FROM alerts
+        """
+
+        parameters: tuple[str, ...] = ()
+
+        if severity is not None:
+            query += " WHERE severity = ?"
+            parameters = (severity.upper(),)
+
+        query += " ORDER BY timestamp, alert_id"
+
         with sqlite3.connect(self.database_path) as connection:
             rows = connection.execute(
-                """
-                SELECT
-                    alert_id,
-                    timestamp,
-                    alert_type,
-                    severity,
-                    source_ip,
-                    description
-                FROM alerts
-                ORDER BY timestamp, alert_id
-                """
+                query,
+                parameters,
             ).fetchall()
 
         return [
             SecurityAlert(
                 alert_id=row[0],
-                timestamp=__import__(
-                    "datetime"
-                ).datetime.fromisoformat(row[1]),
+                timestamp=datetime.fromisoformat(row[1]),
                 alert_type=row[2],
                 severity=row[3],
                 source_ip=row[4],

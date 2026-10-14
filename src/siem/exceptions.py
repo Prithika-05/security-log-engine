@@ -15,3 +15,6 @@ class WebhookHTTPError(NotificationError):
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
+
+class StorageError(Exception):
+    """Raised when alert storage fails."""
