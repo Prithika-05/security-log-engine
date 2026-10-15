@@ -1,11 +1,7 @@
 import asyncio
 from collections.abc import Awaitable, Callable
-import uuid
 
-from siem.exceptions import (
-    NotificationError,
-    WebhookHTTPError,
-)
+from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
 
 

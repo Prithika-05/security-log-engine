@@ -6,6 +6,7 @@ from siem.alerting.notifications import NotificationChannel
 from siem.alerting.rate_limiter import RateLimiter
 from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
+from siem.observability.metrics import Metrics
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +19,14 @@ class AlertManager:
         rate_limiter: RateLimiter,
         notifications: Sequence[NotificationChannel],
         max_concurrent_notifications: int = 10,
+        metrics = None,
     ) -> None:
         self.rate_limiter = rate_limiter
         self.notifications = notifications
         self.notification_semaphore = asyncio.Semaphore(
             max_concurrent_notifications
         )
+        self.metrics = metrics if metrics is not None else Metrics()
 
     # 6. Create a helper method
     async def _send_notification(

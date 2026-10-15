@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytest
-from unittest.mock import AsyncMock
 import asyncio
 
 from siem.tests.unit.test_rate_limiter import FakeClock
@@ -48,8 +47,8 @@ async def test_alert_manager_suppresses_repeated_alerts(capsys):
     limiter = RateLimiter(cooldown_seconds=60, clock=clock.now) # passes a callable clock
     notification = FakeNotification()
 
-    manager = AlertManager(rate_limiter=limiter, notifications=[notification])
-    alert = SecurityAlert(
+    AlertManager(rate_limiter=limiter, notifications=[notification])
+    SecurityAlert(
         timestamp=clock.now(),
         alert_type="BRUTE_FORCE",
         severity="HIGH",

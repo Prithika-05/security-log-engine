@@ -1,9 +1,10 @@
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 from siem.exceptions import StorageError
 from siem.models.alert import SecurityAlert
-from datetime import datetime
+
 
 class SQLiteAlertRepository:
     def __init__(self, database_path: str | Path) -> None:

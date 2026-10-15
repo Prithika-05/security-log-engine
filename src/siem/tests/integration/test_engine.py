@@ -8,7 +8,6 @@ from siem.alerting.rate_limiter import RateLimiter
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.detection.scanner import ScannerDetector
-# FIX: Added missing import statement for the database repository
 from siem.storage.alert_repository import SQLiteAlertRepository
 
 

@@ -4,8 +4,8 @@ from datetime import datetime
 import pytest
 
 from siem.alerting.webhook import WebhookNotification
-from siem.models.alert import SecurityAlert
 from siem.exceptions import NotificationError
+from siem.models.alert import SecurityAlert
 
 class FakeHttpClient:
     def __init__(self) -> None:
@@ -68,7 +68,7 @@ class RecordingClient:
     def __init__(self) -> None:
         self.calls = []
 
-    async def post(self, url, json=None, headers=None, *args, **kwargs):  # Standardised parameters
+    async def post(self, url, json=None, headers=None, *args, **kwargs):  
         self.calls.append({
             "payload": json,
             "headers": headers,

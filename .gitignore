@@ -1,3 +1,18 @@
 __pycache__/
 *.pyc
 *data
+
+# Ignore local Python build and distribution metadata
+*.egg-info/
+*.egg/
+build/
+dist/
+
+# Ignore your virtual environment
+.venv/
+venv/
+ENV/
+
+# Ignore Python runtime cache files
+__pycache__/
+*.py[cod]

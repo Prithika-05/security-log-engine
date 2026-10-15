@@ -25,6 +25,7 @@ class SecurityEngine:
         worker_count: int = 3,
         queue_size: int = 1000,
         alert_repository: SQLiteAlertRepository | None = None,
+        metrics: Any | None = None,
     ) -> None:
         if worker_count < 1:
             raise ValueError(
@@ -35,7 +36,9 @@ class SecurityEngine:
             raise ValueError(
                 "queue_size must be at least 1"
             )
+            
 
+        self.metrics = metrics
         self.detectors = detectors
         self.alert_manager = alert_manager
         self.worker_count = worker_count
@@ -49,8 +52,13 @@ class SecurityEngine:
     ) -> None:
         try:
             entry = parse_log_line(line)
+            if self.metrics is not None:
+                self.metrics.increment("lines_processed")
         except InvalidLogFormatException as exc:
             logger.warning("Invalid log: %s", exc)
+            if self.metrics is not None:
+                self.metrics.increment("lines_processed")
+                self.metrics.increment("invalid_lines")
             return
 
         for detector in self.detectors:

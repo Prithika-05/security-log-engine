@@ -1,7 +1,6 @@
 import pytest
 
-from siem.config import Settings
-from siem.config import load_settings
+from siem.config import Settings, load_settings
 
 def test_default_settings():
     settings = Settings()
