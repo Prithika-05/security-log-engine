@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import time
+from pathlib import Path
 
 from siem.alerting.alert_manager import AlertManager
 from siem.alerting.console import ConsoleNotification
@@ -10,17 +11,12 @@ from siem.config import load_settings
 from siem.core.engine import SecurityEngine
 from siem.detection.brute_force import BruteForceDetector
 from siem.detection.scanner import ScannerDetector
-from siem.logging_config import configure_logging 
-from pathlib import Path
-from siem.storage.alert_repository import SQLiteAlertRepository
-from siem.observability.metrics   import Metrics 
-
+from siem.logging_config import configure_logging
+from siem.observability.metrics import Metrics
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Security Log Analytics Engine"
-    )
+    parser = argparse.ArgumentParser(description="Security Log Analytics Engine")
 
     parser.add_argument(
         "--log-file",
@@ -79,15 +75,15 @@ async def main() -> None:
     log_file = Path(args.log_file)
 
     if not log_file.is_file():
-        raise SystemExit(
-            f"Error: log file does not exist or is not a file: {log_file}"
-        )
+        raise SystemExit(f"Error: log file does not exist or is not a file: {log_file}")
 
     await run_engine(log_file)
+
 
 def run_cli() -> None:
     """Synchronous wrapper to boot the asyncio event loop."""
     asyncio.run(main())
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

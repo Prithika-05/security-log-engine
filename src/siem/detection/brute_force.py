@@ -1,8 +1,10 @@
 from collections import defaultdict
 from datetime import timedelta
 from typing import Optional
+
 from siem.models.alert import SecurityAlert
 from siem.models.log_entry import LogEntry
+
 
 class BruteForceDetector:
     def __init__(self, threshold: int = 5, window_seconds: int = 60):
@@ -27,7 +29,7 @@ class BruteForceDetector:
         self.history[ip] = [t for t in self.history[ip] if t > cutoff_time]
 
         # 4. Check if the threshold is met or exceeded
-               # 4. Check if the threshold is met or exceeded
+        # 4. Check if the threshold is met or exceeded
         if len(self.history[ip]) >= self.threshold:
             # Return an object instance instead of a plain dict
             return SecurityAlert(
@@ -35,9 +37,7 @@ class BruteForceDetector:
                 alert_type="Brute Force Detected",
                 source_ip=ip,
                 description=f"Multiple failed login attempts ({len(self.history[ip])}) detected.",
-                severity="HIGH"
+                severity="HIGH",
             )
-
-
 
         return None

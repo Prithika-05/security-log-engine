@@ -33,9 +33,7 @@ async def test_workers_process_all_alerts():
 
     alerts = [
         SecurityAlert(
-            timestamp=datetime.fromisoformat(
-                "2026-09-30T10:00:00"
-            ),
+            timestamp=datetime.fromisoformat("2026-09-30T10:00:00"),
             alert_type="TEST",
             severity="LOW",
             source_ip=f"10.0.0.{index}",

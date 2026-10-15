@@ -10,6 +10,4 @@ class SecurityAlert:
     severity: str
     source_ip: str
     description: str
-    alert_id: str = field(
-        default_factory=lambda: str(uuid4())
-    )
+    alert_id: str = field(default_factory=lambda: str(uuid4()))

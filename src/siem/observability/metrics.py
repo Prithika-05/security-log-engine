@@ -15,9 +15,7 @@ class Metrics:
     )
 
     def __init__(self) -> None:
-        self._counters: Counter[str] = Counter(
-            {name: 0 for name in self.METRIC_NAMES}
-        )
+        self._counters: Counter[str] = Counter({name: 0 for name in self.METRIC_NAMES})
 
     def increment(self, name: str, amount: int = 1) -> None:
         if name not in self.METRIC_NAMES:

@@ -5,6 +5,7 @@ class InvalidLogFormatException(Exception):
 class NotificationError(Exception):
     """Raised when notification delivery fails."""
 
+
 class WebhookHTTPError(NotificationError):
     """Raised when a webhook returns an unsuccessful HTTP status."""
 
@@ -15,6 +16,7 @@ class WebhookHTTPError(NotificationError):
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
+
 
 class StorageError(Exception):
     """Raised when alert storage fails."""

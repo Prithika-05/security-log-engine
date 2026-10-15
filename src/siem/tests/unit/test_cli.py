@@ -17,6 +17,7 @@ def test_parse_log_file_argument(monkeypatch):
 
     assert args.log_file == "data/sample.log"
 
+
 def test_missing_log_file_argument(monkeypatch):
     monkeypatch.setattr(
         "sys.argv",

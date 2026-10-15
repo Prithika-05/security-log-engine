@@ -4,5 +4,4 @@ from siem.models.alert import SecurityAlert
 
 
 class NotificationChannel(Protocol):
-    async def send(self, alert: SecurityAlert) -> None:
-        ...
+    async def send(self, alert: SecurityAlert) -> None: ...

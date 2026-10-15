@@ -7,6 +7,7 @@ from siem.alerting.webhook import WebhookNotification
 from siem.exceptions import NotificationError
 from siem.models.alert import SecurityAlert
 
+
 class FakeHttpClient:
     def __init__(self) -> None:
         self.requests = []
@@ -19,13 +20,16 @@ class FakeHttpClient:
             }
         )
 
+
 class FailingHttpClient:
     async def post(self, url, json=None, *args, **kwargs):
         raise ConnectionError("Connection refused")
 
+
 class FakeResponse:
     def __init__(self, status_code: int) -> None:
         self.status_code = status_code
+
 
 class StatusCodeClient:
     def __init__(self) -> None:
@@ -38,7 +42,8 @@ class StatusCodeClient:
             return FakeResponse(503)
 
         return FakeResponse(200)
-    
+
+
 class TimeoutClient:
     def __init__(self):
         self.calls = 0
@@ -46,6 +51,7 @@ class TimeoutClient:
     async def post(self, url, json=None, *args, **kwargs):  # Standardised parameters
         self.calls += 1
         await asyncio.sleep(10)
+
 
 class RetryClient:
     def __init__(self):
@@ -57,6 +63,7 @@ class RetryClient:
         if self.calls < 3:
             raise ConnectionError("temporary failure")
 
+
 class FakeSleep:
     def __init__(self) -> None:
         self.delays: list[float] = []
@@ -64,20 +71,24 @@ class FakeSleep:
     async def __call__(self, delay: float) -> None:
         self.delays.append(delay)
 
+
 class RecordingClient:
     def __init__(self) -> None:
         self.calls = []
 
-    async def post(self, url, json=None, headers=None, *args, **kwargs):  
-        self.calls.append({
-            "payload": json,
-            "headers": headers,
-        })
+    async def post(self, url, json=None, headers=None, *args, **kwargs):
+        self.calls.append(
+            {
+                "payload": json,
+                "headers": headers,
+            }
+        )
 
         if len(self.calls) == 1:
             return FakeResponse(503)
 
         return FakeResponse(200)
+
 
 @pytest.mark.asyncio
 async def test_webhook_converts_connection_error():
@@ -89,11 +100,11 @@ async def test_webhook_converts_connection_error():
         alert_type="brute_force",
         severity="high",
         source_ip="10.0.0.8",
-        description="Testing connection errors"
+        description="Testing connection errors",
     )
 
     notification = WebhookNotification(
-        client=client, # 2. Make sure this points to your failing client mock
+        client=client,  # 2. Make sure this points to your failing client mock
         url="https://example.test/webhook",
         timeout_seconds=0.01,
         max_retries=2,
@@ -101,6 +112,7 @@ async def test_webhook_converts_connection_error():
 
     with pytest.raises(NotificationError):
         await notification.send(alert)
+
 
 @pytest.mark.asyncio
 async def test_webhook_retries_without_real_sleep():
@@ -118,6 +130,7 @@ async def test_webhook_retries_without_real_sleep():
 
     assert client.calls == 3
     assert fake_sleep.delays == [1, 2]
+
 
 @pytest.mark.asyncio
 async def test_webhook_retries_server_errors():
@@ -147,16 +160,13 @@ async def test_webhook_sends_alert():
     )
 
     alert = SecurityAlert(
-        timestamp=datetime.fromisoformat(
-            "2026-10-01T10:00:00"
-        ),
+        timestamp=datetime.fromisoformat("2026-10-01T10:00:00"),
         alert_type="BRUTE_FORCE",
         severity="HIGH",
         source_ip="10.0.0.5",
         description="5 failed login attempts",
     )
 
-    
     await notification.send(alert)
 
     assert len(client.requests) == 1
@@ -168,10 +178,11 @@ async def test_webhook_sends_alert():
     assert request["json"]["severity"] == "HIGH"
     assert request["json"]["source_ip"] == "10.0.0.5"
 
+
 @pytest.mark.asyncio
 async def test_webhook_does_not_retry_bad_request():
     client = StatusCodeClient()
-       
+
     # Define a quick mock response structure that returns 400
     class MockResponse:
         status = 400
@@ -181,6 +192,7 @@ async def test_webhook_does_not_retry_bad_request():
     async def mock_post(*args, **kwargs):
         client.calls += 1
         return MockResponse()
+
     client.post = mock_post
 
     fake_sleep = FakeSleep()
@@ -198,14 +210,16 @@ async def test_webhook_does_not_retry_bad_request():
     assert client.calls == 1
     assert fake_sleep.delays == []
 
+
 def make_test_alert() -> SecurityAlert:
     return SecurityAlert(
         timestamp=datetime.now(),
         alert_type="brute_force",
         severity="high",
         source_ip="10.0.0.8",
-        description="Testing retry logic"
+        description="Testing retry logic",
     )
+
 
 @pytest.mark.asyncio
 async def test_webhook_reuses_idempotency_key_on_retry():
@@ -230,7 +244,4 @@ async def test_webhook_reuses_idempotency_key_on_retry():
     assert first["payload"]["alert_id"] == alert.alert_id
     assert second["payload"]["alert_id"] == alert.alert_id
 
-    assert (
-        first["headers"]["Idempotency-Key"]
-        == second["headers"]["Idempotency-Key"]
-    )
+    assert first["headers"]["Idempotency-Key"] == second["headers"]["Idempotency-Key"]

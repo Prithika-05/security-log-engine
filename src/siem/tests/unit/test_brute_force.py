@@ -28,15 +28,12 @@ def test_brute_force_alert_after_threshold():
     alert = None
 
     for i in range(5):
-        alert = detector.process(
-            make_failed_login(
-                start + timedelta(seconds=i)
-            )
-        )
+        alert = detector.process(make_failed_login(start + timedelta(seconds=i)))
 
     assert alert is not None
     assert alert.alert_type == "Brute Force Detected"
     assert alert.source_ip == "10.0.0.5"
+
 
 def test_successful_login_does_not_trigger_alert():
     detector = BruteForceDetector(

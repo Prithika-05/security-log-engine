@@ -11,9 +11,7 @@ async def test_console_notification(capsys):
     notification = ConsoleNotification()
 
     alert = SecurityAlert(
-        timestamp=datetime.fromisoformat(
-            "2026-10-01T10:00:00"
-        ),
+        timestamp=datetime.fromisoformat("2026-10-01T10:00:00"),
         alert_type="BRUTE_FORCE",
         severity="HIGH",
         source_ip="10.0.0.5",

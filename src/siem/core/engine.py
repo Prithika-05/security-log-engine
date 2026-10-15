@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class SecurityEngine:
-
     def __init__(
         self,
         detectors: Sequence[Detector],
@@ -28,15 +27,10 @@ class SecurityEngine:
         metrics: Any | None = None,
     ) -> None:
         if worker_count < 1:
-            raise ValueError(
-                "worker_count must be at least 1"
-            )
+            raise ValueError("worker_count must be at least 1")
 
         if queue_size < 1:
-            raise ValueError(
-                "queue_size must be at least 1"
-            )
-            
+            raise ValueError("queue_size must be at least 1")
 
         self.metrics = metrics
         self.detectors = detectors
@@ -97,9 +91,7 @@ class SecurityEngine:
                     queue.task_done()  # Fixed local variable name
 
         except asyncio.CancelledError:
-            logger.info(
-                "Detection worker shutting down"
-            )
+            logger.info("Detection worker shutting down")
             raise
 
     async def _alert_worker(
@@ -127,9 +119,7 @@ class SecurityEngine:
                     alert_queue.task_done()
 
         except asyncio.CancelledError:
-            logger.info(
-                "Alert worker shutting down"
-            )
+            logger.info("Alert worker shutting down")
             raise
 
     def _start_alert_workers(
@@ -137,9 +127,7 @@ class SecurityEngine:
         alert_queue: asyncio.Queue[SecurityAlert],
     ) -> list[asyncio.Task[None]]:
         return [
-            asyncio.create_task(
-                self._alert_worker(alert_queue)
-            )
+            asyncio.create_task(self._alert_worker(alert_queue))
             for _ in range(self.worker_count)
         ]
 
@@ -149,14 +137,10 @@ class SecurityEngine:
             path,
         )
 
-        queue: asyncio.Queue[str] = asyncio.Queue(
-            maxsize=self.queue_size
-        )
+        queue: asyncio.Queue[str] = asyncio.Queue(maxsize=self.queue_size)
 
-        alert_queue: asyncio.Queue[SecurityAlert] = (
-            asyncio.Queue(
-                maxsize=self.queue_size
-            )
+        alert_queue: asyncio.Queue[SecurityAlert] = asyncio.Queue(
+            maxsize=self.queue_size
         )
 
         detection_worker = asyncio.create_task(
@@ -166,9 +150,7 @@ class SecurityEngine:
             )
         )
 
-        alert_workers = self._start_alert_workers(
-            alert_queue
-        )
+        alert_workers = self._start_alert_workers(alert_queue)
 
         try:
             for line in read_log_file(path):

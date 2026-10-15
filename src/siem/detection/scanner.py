@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from siem.models.alert import SecurityAlert
 from siem.models.log_entry import LogEntry
 
-
 SUSPICIOUS_PATHS = {
     "/admin",
     "/.env",
@@ -38,15 +37,10 @@ class ScannerDetector:
         cutoff = entry.timestamp - self.window
 
         self.requests[entry.ip_address] = [
-            (timestamp, path)
-            for timestamp, path in requests
-            if timestamp >= cutoff
+            (timestamp, path) for timestamp, path in requests if timestamp >= cutoff
         ]
 
-        recent_paths = {
-            path
-            for _, path in self.requests[entry.ip_address]
-        }
+        recent_paths = {path for _, path in self.requests[entry.ip_address]}
 
         if len(recent_paths) >= self.threshold:
             return SecurityAlert(

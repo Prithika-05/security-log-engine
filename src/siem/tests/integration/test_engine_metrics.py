@@ -20,13 +20,12 @@ class NoOpNotification:
 def test_engine_counts_processed_and_invalid_lines(tmp_path) -> None:
     log_file = tmp_path / "sample.log"
     log_file.write_text(
-        "2026-10-14T10:00:00 192.0.2.10 GET /home 200\n"
-        "this is not a valid log line\n",
+        "2026-10-14T10:00:00 192.0.2.10 GET /home 200\nthis is not a valid log line\n",
         encoding="utf-8",
     )
 
     metrics = Metrics()
-    
+
     # 1. REMOVED metrics=metrics from here
     alert_manager = AlertManager(
         rate_limiter=RateLimiter(
@@ -35,7 +34,7 @@ def test_engine_counts_processed_and_invalid_lines(tmp_path) -> None:
         ),
         notifications=[NoOpNotification()],
     )
-    
+
     # 2. ADDED metrics=metrics here
     engine = SecurityEngine(
         detectors=[NoOpDetector()],

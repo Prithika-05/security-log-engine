@@ -4,9 +4,7 @@ from siem.models.alert import SecurityAlert
 
 
 def test_alert_generates_unique_ids():
-    timestamp = datetime.fromisoformat(
-        "2026-09-24T10:00:00"
-    )
+    timestamp = datetime.fromisoformat("2026-09-24T10:00:00")
 
     first = SecurityAlert(
         timestamp=timestamp,

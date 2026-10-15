@@ -2,6 +2,7 @@ import pytest
 
 from siem.config import Settings, load_settings
 
+
 def test_default_settings():
     settings = Settings()
 
@@ -18,6 +19,7 @@ def test_invalid_brute_force_threshold():
 def test_invalid_scanner_window():
     with pytest.raises(ValueError):
         Settings(scanner_window_seconds=0)
+
 
 def test_load_settings_from_environment(monkeypatch):
     monkeypatch.setenv(

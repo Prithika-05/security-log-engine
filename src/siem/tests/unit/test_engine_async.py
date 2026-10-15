@@ -31,9 +31,7 @@ class SlowAlertManager:
 
         start = time.perf_counter()
 
-        await asyncio.gather(
-            *(manager.send(alert) for alert in alerts)
-        )
+        await asyncio.gather(*(manager.send(alert) for alert in alerts))
 
         elapsed = time.perf_counter() - start
 

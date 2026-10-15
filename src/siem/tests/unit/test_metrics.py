@@ -2,6 +2,7 @@ import pytest
 
 from siem.observability.metrics import Metrics
 
+
 def test_metrics_start_at_zero() -> None:
     metrics = Metrics()
 

@@ -21,11 +21,13 @@ def test_invalid_field_count():
     with pytest.raises(InvalidLogFormatException):
         parse_log_line(line)
 
+
 def test_invalid_timestamp():
     line = "not-a-date 10.0.0.5 POST /login 401"
 
     with pytest.raises(InvalidLogFormatException):
         parse_log_line(line)
+
 
 def test_invalid_status_code():
     line = "2026-09-24T10:00:01 10.0.0.5 POST /login not-a-number"

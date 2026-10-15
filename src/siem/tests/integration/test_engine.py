@@ -1,4 +1,3 @@
-from datetime import datetime                    
 from unittest.mock import Mock
 
 import pytest
@@ -17,6 +16,7 @@ class FakeAlertManager(AlertManager):
 
     async def send(self, alert):
         self.alerts.append(alert)
+
 
 @pytest.mark.asyncio
 async def test_engine_processes_file(tmp_path):
@@ -52,6 +52,7 @@ async def test_engine_processes_file(tmp_path):
     assert len(alert_manager.alerts) == 1
     assert alert_manager.alerts[0].alert_type == "Brute Force Detected"
 
+
 class FakeNotification:
     def __init__(self) -> None:
         self.alerts = []
@@ -63,7 +64,7 @@ class FakeNotification:
 @pytest.mark.asyncio
 async def test_full_brute_force_pipeline(tmp_path):
     log_file = tmp_path / "security.log"
- 
+
     log_file.write_text(
         "\n".join(
             [
@@ -87,7 +88,7 @@ async def test_full_brute_force_pipeline(tmp_path):
     clock = Mock()
     rate_limiter = RateLimiter(
         cooldown_seconds=60,
-        clock=clock, 
+        clock=clock,
     )
 
     alert_manager = AlertManager(
@@ -109,7 +110,10 @@ async def test_full_brute_force_pipeline(tmp_path):
 
     saved_alerts = repository.get_all()
     assert len(saved_alerts) == 1
-    assert saved_alerts[0].alert_type == "BRUTE_FORCE" or saved_alerts[0].alert_type == "Brute Force Detected"
+    assert (
+        saved_alerts[0].alert_type == "BRUTE_FORCE"
+        or saved_alerts[0].alert_type == "Brute Force Detected"
+    )
     assert saved_alerts[0].source_ip == "10.0.0.5"
 
     assert len(notification.alerts) == 1
@@ -119,6 +123,7 @@ async def test_full_brute_force_pipeline(tmp_path):
     assert alert.source_ip == "10.0.0.5"
     assert "Multiple failed login attempts (5)" in alert.description
 
+
 def test_engine_rejects_zero_workers():
     with pytest.raises(ValueError):
         SecurityEngine(
@@ -127,6 +132,7 @@ def test_engine_rejects_zero_workers():
             worker_count=0,
         )
 
+
 def test_engine_rejects_invalid_queue_size():
     with pytest.raises(ValueError):
         SecurityEngine(
@@ -134,6 +140,7 @@ def test_engine_rejects_invalid_queue_size():
             alert_manager=None,
             queue_size=0,
         )
+
 
 @pytest.mark.asyncio
 async def test_full_scanner_pipeline(tmp_path):
@@ -160,7 +167,7 @@ async def test_full_scanner_pipeline(tmp_path):
     clock = Mock()
     rate_limiter = RateLimiter(
         cooldown_seconds=60,
-        clock=clock, 
+        clock=clock,
     )
 
     alert_manager = AlertManager(

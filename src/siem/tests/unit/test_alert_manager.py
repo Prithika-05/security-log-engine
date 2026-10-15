@@ -1,21 +1,24 @@
-from datetime import datetime
-import pytest
 import asyncio
+from datetime import datetime
 
-from siem.tests.unit.test_rate_limiter import FakeClock
+import pytest
+
 from siem.alerting.alert_manager import AlertManager
 from siem.alerting.rate_limiter import RateLimiter
 from siem.models.alert import SecurityAlert
+from siem.tests.unit.test_rate_limiter import FakeClock
+
 
 # 1. Define or import NotificationError so the test recognizes it
 class NotificationError(Exception):
     pass
 
+
 # Simple fake class to pass as the required notification dependency
 class FakeNotification:
     def __init__(self):
         self.sent_alerts = []
-        
+
     async def send(self, alert):
         self.sent_alerts.append(alert)
 
@@ -23,6 +26,7 @@ class FakeNotification:
 class FailingNotification:
     async def send(self, alert):
         raise NotificationError("Webhook unavailable")
+
 
 class TrackingNotification:
     def __init__(self) -> None:
@@ -44,7 +48,9 @@ class TrackingNotification:
 @pytest.mark.asyncio
 async def test_alert_manager_suppresses_repeated_alerts(capsys):
     clock = FakeClock(datetime.fromisoformat("2026-10-01T10:00:00"))
-    limiter = RateLimiter(cooldown_seconds=60, clock=clock.now) # passes a callable clock
+    limiter = RateLimiter(
+        cooldown_seconds=60, clock=clock.now
+    )  # passes a callable clock
     notification = FakeNotification()
 
     AlertManager(rate_limiter=limiter, notifications=[notification])
@@ -111,11 +117,10 @@ async def test_alert_manager_sends_to_notification():
     )
     await manager.send(alert)
 
+
 @pytest.mark.asyncio
 async def test_alert_manager_handles_notification_failure(capsys):
-    clock = FakeClock(
-        datetime.fromisoformat("2026-10-01T10:00:00")
-    )
+    clock = FakeClock(datetime.fromisoformat("2026-10-01T10:00:00"))
 
     limiter = RateLimiter(
         cooldown_seconds=60,
@@ -142,9 +147,7 @@ async def test_alert_manager_handles_notification_failure(capsys):
 
 @pytest.mark.asyncio
 async def test_notification_concurrency_is_bounded():
-    clock = FakeClock(
-        datetime.fromisoformat("2026-10-02T10:00:00")
-    )
+    clock = FakeClock(datetime.fromisoformat("2026-10-02T10:00:00"))
 
     limiter = RateLimiter(
         cooldown_seconds=1,
@@ -170,8 +173,6 @@ async def test_notification_concurrency_is_bounded():
         for i in range(5)
     ]
 
-    await asyncio.gather(
-        *(manager.send(alert) for alert in alerts)
-    )
+    await asyncio.gather(*(manager.send(alert) for alert in alerts))
 
     assert notification.maximum_active <= 2

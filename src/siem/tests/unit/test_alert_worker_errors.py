@@ -32,13 +32,9 @@ class FailingAlertManager:
 
         queue: asyncio.Queue[SecurityAlert] = asyncio.Queue()
 
-        worker = asyncio.create_task(
-            engine._alert_worker(queue)
-        )
+        worker = asyncio.create_task(engine._alert_worker(queue))
 
-        timestamp = datetime.fromisoformat(
-            "2026-10-01T10:00:00"
-        )
+        timestamp = datetime.fromisoformat("2026-10-01T10:00:00")
 
         alerts = [
             SecurityAlert(
@@ -91,9 +87,7 @@ class FailingAlertManager:
 
             queue: asyncio.Queue[SecurityAlert] = asyncio.Queue()
 
-            worker = asyncio.create_task(
-                engine._alert_worker(queue)
-            )
+            worker = asyncio.create_task(engine._alert_worker(queue))
 
             worker.cancel()
 

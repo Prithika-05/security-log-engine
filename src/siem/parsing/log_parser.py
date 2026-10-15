@@ -16,9 +16,7 @@ def parse_log_line(line: str) -> LogEntry:
         timestamp = datetime.fromisoformat(parts[0])
         status_code = int(parts[4])
     except ValueError as exc:
-        raise InvalidLogFormatException(
-            f"Invalid log data: {line!r}"
-        ) from exc
+        raise InvalidLogFormatException(f"Invalid log data: {line!r}") from exc
 
     return LogEntry(
         timestamp=timestamp,

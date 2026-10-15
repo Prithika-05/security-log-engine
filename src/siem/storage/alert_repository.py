@@ -58,9 +58,7 @@ class SQLiteAlertRepository:
                     ),
                 )
         except sqlite3.Error as exc:
-            raise StorageError(
-                f"Failed to save alert {alert.alert_id}"
-            ) from exc
+            raise StorageError(f"Failed to save alert {alert.alert_id}") from exc
 
     def get_all(
         self,

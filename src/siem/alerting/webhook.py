@@ -15,21 +15,16 @@ class WebhookNotification:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
         if timeout_seconds <= 0:
-            raise ValueError(
-                "timeout_seconds must be greater than zero"
-            )
+            raise ValueError("timeout_seconds must be greater than zero")
 
         if max_retries < 0:
-            raise ValueError(
-                "max_retries must not be negative"
-            )
+            raise ValueError("max_retries must not be negative")
 
         self.client = client
         self.url = url
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.sleep = sleep
-
 
     async def send(self, alert: SecurityAlert) -> None:
         payload = {
@@ -42,9 +37,9 @@ class WebhookNotification:
         }
 
         headers = {
-        "Idempotency-Key":  alert.alert_id  # or use alert.alert_id if preferred
+            "Idempotency-Key": alert.alert_id  # or use alert.alert_id if preferred
         }
-        
+
         sleep_func = getattr(self, "sleep", None) or asyncio.sleep
 
         for attempt in range(self.max_retries + 1):
@@ -57,13 +52,15 @@ class WebhookNotification:
                 # Check both common mock naming conventions (.status and .status_code)
                 status = None
                 if response is not None:
-                    status = getattr(response, "status", None) or getattr(response, "status_code", None)
+                    status = getattr(response, "status", None) or getattr(
+                        response, "status_code", None
+                    )
 
                 if status is not None:
                     # 1. Bad Request: raise NotificationError immediately without retrying
                     if status == 400:
                         raise NotificationError(f"Bad request received: {status}")
-                    
+
                     # 2. Server Error: trigger a retry by raising a connection/retryable exception
                     if 500 <= status < 600:
                         raise ConnectionError(f"Server error status {status}")
@@ -72,10 +69,12 @@ class WebhookNotification:
 
             except (ConnectionError, TimeoutError) as exc:
                 if attempt == self.max_retries:
-                    raise NotificationError(f"Failed to send alert to {self.url}") from exc
-                
+                    raise NotificationError(
+                        f"Failed to send alert to {self.url}"
+                    ) from exc
+
                 # Use the delay increment expected by your tests (e.g., 1, 2)
-                delay = attempt + 1  
+                delay = attempt + 1
                 if hasattr(sleep_func, "delays"):
                     sleep_func.delays.append(delay)
                 else:

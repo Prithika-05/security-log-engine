@@ -2,9 +2,7 @@ import argparse
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Security log analytics engine"
-    )
+    parser = argparse.ArgumentParser(description="Security log analytics engine")
 
     parser.add_argument(
         "--log-file",

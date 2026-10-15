@@ -12,20 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class AlertManager:
-
     # 5. Apply bounded concurrency to notifications
     def __init__(
         self,
         rate_limiter: RateLimiter,
         notifications: Sequence[NotificationChannel],
         max_concurrent_notifications: int = 10,
-        metrics = None,
+        metrics=None,
     ) -> None:
         self.rate_limiter = rate_limiter
         self.notifications = notifications
-        self.notification_semaphore = asyncio.Semaphore(
-            max_concurrent_notifications
-        )
+        self.notification_semaphore = asyncio.Semaphore(max_concurrent_notifications)
         self.metrics = metrics if metrics is not None else Metrics()
 
     # 6. Create a helper method

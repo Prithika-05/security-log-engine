@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 @dataclass
-class LogEntry: 
+class LogEntry:
     timestamp: datetime
     ip_address: str
     method: str
